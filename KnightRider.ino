@@ -71,12 +71,12 @@ void myIrq(void)
     // This function fires at 15625Hz.
     static byte counter = 0;
     counter++;
-    if ((counter & 31) == 0) {
+    if ((counter & 63) == 0) {
         // So this fires at 244Hz. Trim this to whatever you want
         // to control the speed of your KITT :-)
         moveKITT();
     }
-    if ((counter & 127) == 0) {
+    if ((counter & 255) == 0) {
         // 15625 / 256 = 61 times per second, fade up/down the LEDs
         fadeEffect();
     }
@@ -91,7 +91,7 @@ void moveKITT(void)
     static byte kittIndex;
 
     if (!shadow)
-        shadow = 20; // This controls how fast K.I.T.T. will look around :-)
+        shadow = 40; // This controls how fast K.I.T.T. will look around :-)
                      // Tweak it to your heart's content - or 'glue' it up
                      // to a potentiometer for run-time fun :-)
     if (--shadow == 0) {
@@ -117,7 +117,7 @@ void softPWM(void)
     static byte shadows[PWM_PINS];
 
     counter++;
-    if ((counter & 0x7f) == 0x7f) {
+    if ((counter & 0xff) == 0xff) {
         // At the end of each of the 61 blocks (of 256 ticks),
         // reset the 'shadows' counters to their currently set 
         // PWM value (0..255).
@@ -161,12 +161,12 @@ void softPWM(void)
 void fadeEffect(void)
 {
     for(byte i = 0; i < PWM_PINS; i++) {
-        if (leds[i] && pwm_regs[i] < 127) {
+        if (leds[i] && pwm_regs[i] < 255) {
             // if the main logic has requested this LED to be on,
             // and the SW PWM hasn't reached 255 yet,
             // quickly light it up (in 4 steps).
-            unsigned x = pwm_regs[i] + 32;  
-            if (x > 127) x = 127;
+            unsigned x = pwm_regs[i] + 64;  
+            if (x > 255) x = 255;
             pwm_regs[i] = x;
         }
         else if (!leds[i] && pwm_regs[i]) {
