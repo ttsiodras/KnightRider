@@ -7,8 +7,11 @@
 
 #include <TimerOne.h>
 
-#define PWM_PINS    8
-#define START_PIN   2
+#define   PWM_PINS    8
+
+#define   DATA_PIN    2
+#define   CLOCK_PIN   1
+#define   LATCH_PIN   0
 
 // The 'inputs' of the SW PWM - i.e. what our logic (in moveKITT, below)
 // sets our LEDs to.
@@ -23,10 +26,13 @@ byte pwm_regs[PWM_PINS];
 
 void setup()
 {
-    for(byte i = START_PIN; i < START_PIN+PWM_PINS; i++) {
-        pinMode(i, OUTPUT);
-        digitalWrite(i, LOW);
-    }
+    pinMode(DATA_PIN, OUTPUT);
+    pinMode(CLOCK_PIN, OUTPUT);
+    pinMode(LATCH_PIN, OUTPUT);
+
+    // Switch off all LEDs.
+    digitalWrite(LATCH_PIN, HIGH);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);  
 
     // We use 64 for TimerOne param - so 1MHz / 64 = 15625Hz ISR frequency.
     // We then split these 15625 activations into 61 blocks of 256 ticks each,
@@ -64,12 +70,13 @@ void myIrq(void)
 {
     // This function fires at 15625Hz.
     static byte counter = 0;
-    if (counter % 64 == 0) {
+    counter++;
+    if ((counter & 15) == 0) {
         // So this fires at 244Hz. Trim this to whatever you want
         // to control the speed of your KITT :-)
         moveKITT();
     }
-    if (!counter++) {
+    if ((counter & 63) == 0) {
         // 15625 / 256 = 61 times per second, fade up/down the LEDs
         fadeEffect();
     }
@@ -84,7 +91,7 @@ void moveKITT(void)
     static byte kittIndex;
 
     if (!shadow)
-        shadow = 40; // This controls how fast K.I.T.T. will look around :-)
+        shadow = 30; // This controls how fast K.I.T.T. will look around :-)
                      // Tweak it to your heart's content - or 'glue' it up
                      // to a potentiometer for run-time fun :-)
     if (--shadow == 0) {
@@ -109,14 +116,14 @@ void softPWM(void)
     static byte counter = 0;
     static byte shadows[PWM_PINS];
 
-    if (!counter++) {
-        // At the beginning of each of the 61 blocks (of 256 ticks),
+    counter++;
+    if ((counter & 0x3f) == 0x3f) {
+        // At the end of each of the 61 blocks (of 256 ticks),
         // reset the 'shadows' counters to their currently set 
         // PWM value (0..255).
         for(byte i = 0; i < PWM_PINS; i++) {
             shadows[i] = pwm_regs[i];
         }
-        counter++;
     }
 
     // Then at each tick, decrement the 'shadows' counter of each LED.
@@ -143,21 +150,23 @@ void softPWM(void)
         state = (state << 1) | b;
     }
 
-    // Use direct PORT register access instead of digitalWrite
-    // (which would be abysmally slower)
-    PORTD = (PORTD & 0x03) | (state << 2);
-    PORTB = (PORTB & ~0x03) | (state >> 6);
+    // the LEDs must not change while we're sending in bits
+    digitalWrite(LATCH_PIN, LOW);
+    // shift out the bits:
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, state);  
+    //take the latch pin high so the LEDs will light up
+    digitalWrite(LATCH_PIN, HIGH);
 }
 
 void fadeEffect(void)
 {
     for(byte i = 0; i < PWM_PINS; i++) {
-        if (leds[i] && pwm_regs[i] != 255) {
+        if (leds[i] && pwm_regs[i] < 63) {
             // if the main logic has requested this LED to be on,
             // and the SW PWM hasn't reached 255 yet,
             // quickly light it up (in 4 steps).
-            unsigned x = pwm_regs[i] + 64;  
-            if (x > 255) x = 255;
+            unsigned x = pwm_regs[i] + 16;  
+            if (x > 63) x = 63;
             pwm_regs[i] = x;
         }
         else if (!leds[i] && pwm_regs[i]) {

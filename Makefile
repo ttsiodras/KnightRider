@@ -4,12 +4,13 @@ BUILD_DIR := ${CURRENT_DIR}/tmp
 
 SRC:=KnightRider.ino
 ELF:=tmp/${SRC}.elf
+HEX:=tmp/${SRC}.hex
 
 BASE:=/usr/share/arduino
 USER_BASE:=$(HOME)/.arduino15
 USER_LIBS:=$(HOME)/Arduino/libraries
-BOARD:=arduino:avr:pro:cpu=8MHzatmega328
-
+BOARD:=attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8
+# -vid-pid=1A86_7523
 HARDWARE:=-hardware ${BASE}/hardware -hardware ${USER_BASE}/packages 
 TOOLS:=-tools ${BASE}/tools-builder -tools ${USER_BASE}/packages
 LIBRARIES=-built-in-libraries ${BASE}/lib
@@ -31,5 +32,5 @@ clean:
 	rm -rf ${BUILD_DIR} build.log
 
 upload:	all
-	avrdude -pm328p -carduino -P /dev/ttyUSB0 -b57600 -U flash:w:${ELF}
+	avrdude -C/home/ttsiod/.arduino15/packages/arduino/tools/avrdude/6.3.0-arduino9/etc/avrdude.conf -v -pattiny85 -cstk500v1 -P/dev/ttyUSB0 -b19200 -Uflash:w:${HEX}:i
 	avr-size ${ELF}
