@@ -1,7 +1,7 @@
 # Arduino-based Knight Rider LED scanner (software PWM)
 
 A very simple project implementing [K.I.T.T's](https://en.wikipedia.org/wiki/Knight_Rider_%281982_TV_series%29)
-LED scanner - using an Arduino and 8 LEDs that are controlled via software PWM.
+LED scanner - using an Arduino Nano and 8 LEDs that are controlled via software PWM.
 
 <center>
 <img src="kitt.gif">
