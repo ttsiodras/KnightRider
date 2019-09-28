@@ -22,9 +22,8 @@ perfboard. The Nano was also replaced with an ATtiny85 and a 74HC595 shift regis
 The ATtiny85 used less power - but didn't have enough pins, so I had to use a
 74HC595 shift register to control the LEDs. That in turn made things slower; so
 I had to improve the algorithm to make it fast enough to hide the flicker from
-human eyes. I also added a LiPo battery to make the design portable; and also
-added a TP4056 module to charge it (and also disconnect things when voltage
-drops down to 3V).
+human eyes. I also added a LiPo battery to make the design portable; and a TP4056 module
+to (a) charge the battery and (b) disconnect it when voltage drops down to 3V.
 
 Generally speaking, this is an example of handling a requirement for more
 PWM pins than the one your microcontroller offers. Also note that in the end, the
